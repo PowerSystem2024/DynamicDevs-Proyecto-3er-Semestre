@@ -35,6 +35,8 @@ El proyecto puede ser desarrollado en el IDE de tu preferencia (IntelliJ, NetBea
 Se tiene que recordar que las PR se realizan únicamente a la rama `dev`, por lo tanto se debe prestar mucha atención porque se puede realizar una petición a una rama erronea.
 
 ## Diagrama de Clases
-El diagrama lo pueden encontrar dentro de la carpeta raíz del proyecto: `enertech`. Consultarlo las veces que sea necesario como referencia.
+El diagrama lo pueden encontrar en la siguiente ruta `enertech\diagrams\`.
 
-![Diagrama de clases del proyecto]()
+![Diagrama UML (Comprimido)](enertech/diagrams/enertech-v1-basic.svg)
+
+![Diagrama UML (Extendido)](enertech/diagrams/enertech-v1-extended.svg)
