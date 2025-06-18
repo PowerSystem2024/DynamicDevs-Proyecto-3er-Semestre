@@ -72,6 +72,6 @@ class Admin(User):
     def deactivateUser(self, user):
         pass  
 
-    # Devuelve una representación en cadena del objeto Admin
+    # Devuelve una representación como string del objeto Admin
     def __str__(self):
         return f"Admin(id={self.id}, name={self.first_name} {self.last_name}, role={self.role.value}, department={self.department})"
