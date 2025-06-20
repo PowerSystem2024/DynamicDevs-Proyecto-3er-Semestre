@@ -9,7 +9,8 @@ class User(ABC):
         self._last_name = last_name
         self._email = email
         self._password = password
-        self._role = self._determine_role()
+        self._active = True  # Default value for active status
+        self._role = self._determinate_role()
 
     # Getters
     @property
@@ -31,6 +32,19 @@ class User(ABC):
     @property
     def password(self) -> str:
         return self._password
+
+    @property
+    def is_active(self) -> bool:
+        """
+        Returns the active status of the user.
+        """
+        return self._active
+
+    @is_active.setter
+    def is_active(self, value: bool):
+        if not isinstance(value, bool):
+            raise ValueError("Active status must be a boolean")
+        self._active = value
 
     @property
     @abstractmethod
@@ -67,7 +81,7 @@ class User(ABC):
         self._password = value
 
     @abstractmethod
-    def _determine_role(self) -> UserRole:
+    def _determinate_role(self):
         """
         Determines the role of the user based on their hierarchy or other criteria.
         This is a placeholder implementation and should be overridden in subclasses.
