@@ -1,26 +1,23 @@
 # Importa el enum que representa los roles del usuario
-from domain.UserRole import UserRole
+from src.domain.UserRole import UserRole
 # Importa la clase User
-from domain.User import User 
+from src.domain.User import User
+
 
 # La clase Admin hereda de la clase User y representa a un usuario administrador 
 class Admin(User):
-    def __init__(self, first_name: str, last_name: str, email: str, password: str, role: UserRole, department: str):
+    def __init__(self, first_name: str, last_name: str, email: str, password: str, department: str):
         # Llama al constructor de la clase padre User 
         super().__init__(first_name, last_name, email, password)
-
         # Atributos de la clase Admin
-        self._comment = ""                   
-        self._registered_assets = []        
-        self._role = role                   # Rol del usuario, definido por el enum UserRole
-        self._department = department       # Departamento al que pertenece el administrador
+        self._department = department  # Departamento al que pertenece el administrador
 
     @property
     def role(self) -> UserRole:
         return self._role
 
-    def _determine_role(self) -> UserRole:
-        return self._role
+    def _determine_role(self):
+        self._role = UserRole.ADMIN  # Establece el rol del usuario como ADMIN
 
     # Propiedad para obtener el departamento del administrador
     @property
@@ -33,44 +30,6 @@ class Admin(User):
         if not isinstance(value, str):
             raise ValueError("El departamento debe ser una cadena de texto")
         self._department = value
-
-    # Propiedad para obtener el comentario
-    @property
-    def comment(self) -> str:
-        return self._comment
-
-    # Setter para modificar el comentario, validando que sea una cadena
-    @comment.setter
-    def comment(self, value: str):
-        if not isinstance(value, str):
-            raise ValueError("El comentario debe ser una cadena de texto")
-        self._comment = value
-
-    @property
-    def registered_assets(self) -> list:
-        return self._registered_assets
-
-    def getDepartment(self) -> str:
-        return self.department
-
-    def changeDepartment(self, newDepartment: str):
-        self.department = newDepartment
-
-    def getRegisteredAssets(self) -> list:
-        return self.registered_assets
-
-    def registerAsset(self, industrialAsset):
-        if industrialAsset not in self._registered_assets:
-            self._registered_assets.append(industrialAsset)
-
-    def registerSupervisor(self, supervisor):
-        pass  
-
-    def registerTechnician(self, technician):
-        pass  
-
-    def deactivateUser(self, user):
-        pass  
 
     # Devuelve una representación como string del objeto Admin
     def __str__(self):
