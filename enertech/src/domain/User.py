@@ -10,7 +10,8 @@ class User(ABC):
         self._email = email
         self._password = password
         self._active = True  # Default value for active status
-        self._role = self._determinate_role()
+        self._role = None  # the role will be determined by subclasses
+        self._determine_role()
 
     # Getters
     @property
@@ -81,7 +82,7 @@ class User(ABC):
         self._password = value
 
     @abstractmethod
-    def _determinate_role(self):
+    def _determine_role(self):
         """
         Determines the role of the user based on their hierarchy or other criteria.
         This is a placeholder implementation and should be overridden in subclasses.
