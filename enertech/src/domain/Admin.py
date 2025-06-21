@@ -1,7 +1,7 @@
 # Importa el enum que representa los roles del usuario
-from src.domain.UserRole import UserRole
+from enertech.src.domain.UserRole import UserRole
 # Importa la clase User
-from src.domain.User import User
+from enertech.src.domain.User import User
 
 
 # La clase Admin hereda de la clase User y representa a un usuario administrador 

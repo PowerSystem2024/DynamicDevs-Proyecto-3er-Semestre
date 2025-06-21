@@ -1,4 +1,4 @@
-from src.domain.UserRole import UserRole
+from enertech.src.domain.UserRole import UserRole
 from abc import ABC, abstractmethod  # Abstract Base Class for User
 
 
