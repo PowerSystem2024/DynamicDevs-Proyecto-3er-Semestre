@@ -10,11 +10,11 @@ class PriorityLevel(Enum):
     - MEDIO: Prioridad estándar.
     - BAJO: Baja urgencia (puede postergarse).
     """
-    CRITICO = 5
-    URGENTE = 4
-    ALTO = 3
-    MEDIO = 2
-    BAJO = 1
+    CRITICAL = 5
+    URGENT = 4
+    HIGH = 3
+    MEDIUM = 2
+    LOW = 1
 
     def __str__(self):
         """Representación legible del nivel de prioridad."""
