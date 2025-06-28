@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from src.domain.MaintenanceType import MaintenanceType
-from src.domain.PriorityLevel import PriorityLevel
-from src.domain.Status import Status
-from src.domain.TimeUnit import TimeUnit
+from enertech.src.domain.MaintenanceType import MaintenanceType
+from enertech.src.domain.PriorityLevel import PriorityLevel
+from enertech.src.domain.Status import Status
+from enertech.src.domain.TimeUnit import TimeUnit
 
 
 class WorkOrder:
@@ -35,36 +35,39 @@ class WorkOrder:
             estimated_time: int,  # Tiempo estimado en valor entero para completar la orden
             estimated_time_unit: TimeUnit,  # Unidad de tiempo (hora, día, semana)
             description: str,  # Descripción detallada de la orden de trabajo
-            assigned_technician: Optional[int] = None  # ID del técnico asignado (opcional)
+            assigned_to: Optional[int] = None  # ID del técnico asignado (opcional)
     ):
         # Inicialización de los atributos básicos
+        self._id = None
         self._title = title
         self._created_by = created_by
         self._asset_id = asset_id
         self._maintenance_type = maintenance_type
         self._priority = priority
+        self._status = Status.UNASSIGNED  # if assigned_to is None else Status.IN_PROGRESS
         self._estimated_time = estimated_time
         self._estimated_time_unit = estimated_time_unit
         self._description = description
-        self._assigned_technician = assigned_technician
-
+        self._assigned_to = assigned_to
         # Se asigna la fecha de creación automáticamente al momento de instanciar
         self._opened_at = datetime.now()
         # Los siguientes atributos se establecerán cuando la orden sea resuelta
-        self._resolved_at: Optional[datetime] = None
-        self._closure_comments: Optional[str] = None
-
-        # Determinación del estado inicial según la asignación del técnico:
-        #   - Si assigned_technician es None => Estado UNASSIGNED.
-        #   - Si assigned_technician tiene un ID => Estado IN_PROGRESS.
-        if assigned_technician is None:
-            self._status = Status.UNASSIGNED
-        else:
-            self._status = Status.IN_PROGRESS
+        self._resolved_at = None
+        self._closure_comments = None
 
     # ============================================================
     # Propiedades (getters y setters) para cada atributo de la clase
     # ============================================================
+
+    @property
+    def id(self) -> int:
+        """ Obtiene el ID de la orden de trabajo. """
+        return self._id
+
+    @id.setter
+    def id(self, value: int):
+        """ Establece el ID de la orden de trabajo. """
+        self._id = value
 
     @property
     def title(self) -> str:
@@ -147,28 +150,26 @@ class WorkOrder:
         self._description = value
 
     @property
-    def assigned_technician(self) -> Optional[int]:
+    def assigned_to(self) -> Optional[int]:
         """ Obtiene el ID del técnico asignado (puede ser None si aún no se asigna). """
-        return self._assigned_technician
+        return self._assigned_to
 
-    @assigned_technician.setter
-    def assigned_technician(self, value: Optional[int]):
+    @assigned_to.setter
+    def assigned_to(self, value: int):
         """
-        Establece el ID del técnico asignado.
-        Además, actualiza el estado de la orden:
-          - Si se elimina el técnico (value es None), el estado pasa a UNASSIGNED.
-          - Si se asigna un técnico, el estado pasa a IN_PROGRESS.
+        Establece el ID del técnico asignado a la orden.
         """
-        self._assigned_technician = value
-        if value is None:
-            self._status = Status.UNASSIGNED
-        else:
-            self._status = Status.IN_PROGRESS
+        self._assigned_to = value
 
     @property
     def opened_at(self) -> datetime:
         """ Obtiene la fecha y hora en que se abrió la orden. """
         return self._opened_at
+
+    @opened_at.setter
+    def opened_at(self, value: datetime):
+        """ Establece la fecha y hora en que se abrió la orden. """
+        self._opened_at = value
 
     @property
     def resolved_at(self) -> Optional[datetime]:
@@ -204,28 +205,29 @@ class WorkOrder:
     # Métodos auxiliares para la lógica de negocio de la orden
     # ===============================================================
 
+    def _get_estimated_duration(self) -> timedelta:
+        """Retorna la duración estimada como timedelta basado en la unidad de tiempo."""
+        if self._estimated_time_unit == TimeUnit.HOURS:
+            return timedelta(hours=self._estimated_time)
+        elif self._estimated_time_unit == TimeUnit.DAYS:
+            return timedelta(days=self._estimated_time)
+        elif self._estimated_time_unit == TimeUnit.WEEKS:
+            return timedelta(weeks=self._estimated_time)
+        return timedelta()
+
     def get_remaining_time(self) -> timedelta:
         """
         Calcula el tiempo restante para completar la orden basado en:
           - La fecha de apertura (opened_at)
           - El tiempo estimado y su unidad.
-
-        Retorna un objeto timedelta que puede ser negativo si se ha excedido el tiempo estimado.
+        Returns:
+            timedelta con el tiempo restante (puede ser negativo si se excedió)
         """
-        # Determinar el delta en función de la unidad de tiempo
-        if self._estimated_time_unit == TimeUnit.HOURS:
-            delta = timedelta(hours=self._estimated_time)
-        elif self._estimated_time_unit == TimeUnit.DAYS:
-            delta = timedelta(days=self._estimated_time)
-        elif self._estimated_time_unit == TimeUnit.WEEKS:
-            delta = timedelta(weeks=self._estimated_time)
-        else:
-            delta = timedelta()
+        estimated_duration = self._get_estimated_duration()
+        deadline = self._opened_at + estimated_duration
+        return deadline - datetime.now(timezone.utc)  # Usar UTC para consistencia
 
-        deadline = self._opened_at + delta  # Fecha límite para completar la orden
-        return deadline - datetime.now()  # Tiempo restante (puede ser negativo)
-
-    def was_resolved_on_time(self) -> Optional[bool]:
+    def was_resolved_on_time(self) -> bool | None:
         """
         Determina si la orden de trabajo fue resuelta a tiempo, comparando:
           - La fecha en que se resolvió la orden (resolved_at)
@@ -234,21 +236,12 @@ class WorkOrder:
         Retorna:
           - True si la orden se resolvió en o antes de la fecha límite.
           - False si se resolvió después.
-          - None si aun no se ha resuelto (resolved_at es None).
+          - None si aún no se ha resuelto (resolved_at es None).
         """
         if self._resolved_at is None:
             return None
-
-        if self._estimated_time_unit == TimeUnit.HOURS:
-            delta = timedelta(hours=self._estimated_time)
-        elif self._estimated_time_unit == TimeUnit.DAYS:
-            delta = timedelta(days=self._estimated_time)
-        elif self._estimated_time_unit == TimeUnit.WEEKS:
-            delta = timedelta(weeks=self._estimated_time)
-        else:
-            delta = timedelta()
-
-        deadline = self._opened_at + delta
+        estimated_duration = self._get_estimated_duration()
+        deadline = self._opened_at + estimated_duration
         return self._resolved_at <= deadline
 
     def __str__(self) -> str:
@@ -256,10 +249,9 @@ class WorkOrder:
         Representación en forma de cadena de la orden de trabajo,
         mostrando los campos más relevantes.
         """
-        return (
-            f"WorkOrder(title={self._title}, created_by={self._created_by}, asset_id={self._asset_id}, "
-            f"maintenance_type={self._maintenance_type.value}, priority={self._priority.value}, "
-            f"estimated_time={self._estimated_time} {self._estimated_time_unit.value}, "
-            f"description={self._description}, assigned_technician={self._assigned_technician}, "
-            f"opened_at={self._opened_at}, status={self._status.value})"
-        )
+        return (f"WorkOrder(id={self._id}, title='{self._title}', created_by={self._created_by}, "
+                f"asset_id={self._asset_id}, maintenance_type={self._maintenance_type}, "
+                f"priority={self._priority}, estimated_time={self._estimated_time} {self._estimated_time_unit}, "
+                f"description='{self._description}', assigned_to={self._assigned_to}, "
+                f"opened_at={self._opened_at}, resolved_at={self._resolved_at}, "
+                f"closure_comments='{self._closure_comments}', status={self._status})")
