@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Status(Enum):
     """
     Enumerador que representa los estados posibles de una orden de trabajo.
@@ -12,14 +13,10 @@ class Status(Enum):
     - CANCELLED: Orden cancelada antes de completarse.
     - ON_HOLD: Pausada temporalmente por algún motivo.
     """
-    UNASSIGNED = 1
-    IN_PROGRESS = 2
-    RESOLVED = 3
-    REOPENED = 4
-    WAITING_PARTS = 5
-    CANCELLED = 6
-    ON_HOLD = 7
-
-    def __str__(self):
-        """Devuelve el nombre del estado en formato legible."""
-        return self.name.replace("_", " ").title()
+    UNASSIGNED = 'UNASSIGNED'
+    IN_PROGRESS = 'IN_PROGRESS'
+    RESOLVED = 'RESOLVED'
+    REOPENED = 'REOPENED'
+    WAITING_PARTS = 'WAITING_PARTS'
+    CANCELLED = 'CANCELLED'
+    ON_HOLD = 'ON_HOLD'

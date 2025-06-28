@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class PriorityLevel(Enum):
     """
     Enumerador que clasifica el nivel de prioridad de una orden de trabajo.
@@ -10,12 +11,8 @@ class PriorityLevel(Enum):
     - MEDIO: Prioridad estándar.
     - BAJO: Baja urgencia (puede postergarse).
     """
-    CRITICAL = 5
-    URGENT = 4
-    HIGH = 3
-    MEDIUM = 2
-    LOW = 1
-
-    def __str__(self):
-        """Representación legible del nivel de prioridad."""
-        return self.name.capitalize()
+    CRITICAL = 'CRITICAL'
+    URGENT = 'URGENT'
+    HIGH = 'HIGH'
+    MEDIUM = 'MEDIUM'
+    LOW = 'LOW'
