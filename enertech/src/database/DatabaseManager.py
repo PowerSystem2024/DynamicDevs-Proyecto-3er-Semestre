@@ -1,18 +1,17 @@
 import os
-from contextlib import contextmanager
-
 import psycopg2
+from psycopg2 import DatabaseError
+
 from enertech.src.AppLogger import AppLogger
 
 
 class DatabaseManager:
-    _log = AppLogger.setup_logger('enertech_db')
-
     def __init__(self, db_config: dict):
         self._db_config = db_config
         self._conn = None  # se establece con initialize()
+        self._log = AppLogger.setup_logger(DatabaseManager.__name__)
 
-    def _stablish_connection(self):
+    def _establish_connection(self):
         """Establece la conexión a la base de datos usando la conexion global"""
         try:
             self._conn = psycopg2.connect(**self._db_config)
@@ -27,21 +26,20 @@ class DatabaseManager:
     def get_connection(self) -> psycopg2.extensions.connection:
         """Devuelve la conexión a la base de datos, estableciéndola si no está activa"""
         if self._conn is None or self._conn.closed:
-            self._stablish_connection()
+            self._establish_connection()
         return self._conn
 
-    @contextmanager
-    def transaction(self):
-        """Context manager que maneja commit/rollback automático"""
-        if self._conn.closed:
-            raise RuntimeError("Conexión cerrada")
-
+    def commit_transaction(self):
+        """
+        Realiza un commit de la transacción actual en la conexión activa.
+        Si falla, hace rollback y muestra el error.
+        """
         try:
-            yield
-            self._conn.commit()
-        except Exception as e:
-            self._conn.rollback()
-            raise RuntimeError(f"Error en transacción: {str(e)}")
+            self._conn.commit()  # Confirmar todos los cambios pendientes
+            self._log.debug("Commit realizado correctamente.")
+        except DatabaseError as e:
+            self._log.exception(f"Error al hacer commit: {e}", exc_info=True)
+            self._conn.rollback()  # Revertir cambios en caso de error
 
     def close_connection(self):
         """Cierra la conexión a la base de datos"""
@@ -89,9 +87,9 @@ class DatabaseManager:
         """Verifica si la DB existe (usa conexión temporal con autocommit)"""
         query = "SELECT 1 FROM pg_database WHERE datname = %s"
         # Se crea una conexión temporal sin la base de datos para verificar su existencia
-        connetion_params = {k: v for k, v in self._db_config.items() if
-                            k != 'dbname'}  # Excluye 'dbname' para evitar errores de conexión
-        temp_conn = psycopg2.connect(**connetion_params)
+        connection_params = {k: v for k, v in self._db_config.items() if
+                             k != 'dbname'}  # Excluye 'dbname' para evitar errores de conexión
+        temp_conn = psycopg2.connect(**connection_params)
         temp_conn.autocommit = True  # Necesario en este caso para evitar problemas de transacciones
         exist = False
         try:
@@ -105,9 +103,9 @@ class DatabaseManager:
     def _create_database(self):
         """Crea la DB (usa conexión temporal con autocommit)"""
         # Se crea una conexión temporal sin la base de datos para verificar su existencia
-        connetion_params = {k: v for k, v in self._db_config.items() if
-                            k != 'dbname'}  # Excluye 'dbname' para evitar errores de conexión
-        temp_conn = psycopg2.connect(**connetion_params)
+        connection_params = {k: v for k, v in self._db_config.items() if
+                             k != 'dbname'}  # Excluye 'dbname' para evitar errores de conexión
+        temp_conn = psycopg2.connect(**connection_params)
         temp_conn.autocommit = True  # Necesario para crear la base de datos
 
         try:
@@ -142,9 +140,10 @@ class DatabaseManager:
         try:
             if not self._database_exists():
                 self._create_database()  # Crear la base de datos (usa conexión temporal)
-                self._stablish_connection()  # Establecer conexión después de crear la base de datos
-                self._create_schema()
+                self._establish_connection()  # Establecer conexión después de crear la base de datos
+                self._create_schema() # crea las tablas y los índices
                 self._log.info(f"Base de datos {self._db_config['dbname']} inicializada correctamente.")
+                self.close_connection() # cierra la conexión
             else:
                 self._log.info(f"La base de datos {self._db_config['dbname']} ya existe.")
         except psycopg2.OperationalError as e:
