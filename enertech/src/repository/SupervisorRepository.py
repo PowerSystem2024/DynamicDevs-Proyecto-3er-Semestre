@@ -5,9 +5,18 @@ from src.domain.Supervisor import Supervisor
 # Repositorio para manejar operaciones de base de datos para supervisores
 class SupervisorRepository:
     def __init__(self, db_manager: DatabaseManager):
+        """
+        Constructor que inicializa el repositorio con un gestor de base de datos.
+        :param db_manager: Instancia de DatabaseManager para manejar conexiones a la base de datos.
+        """
         self._db_manager = db_manager
 
     def save(self, supervisor: Supervisor) -> Supervisor:
+        """
+        Inserta un nuevo supervisor en la base de datos y devuelve la entidad creada con el ID asignado.
+        :param supervisor: Instancia de Supervisor con los datos a insertar.
+        :return: Supervisor con los datos insertados, incluyendo el ID generado.
+        """
         query = """
             INSERT INTO supervisors (
                 first_name, last_name, email, password, rol, active, assigned_area
@@ -38,6 +47,11 @@ class SupervisorRepository:
         )
 
     def update(self, supervisor: Supervisor) -> Supervisor:
+        """
+        Actualiza un supervisor existente en la base de datos y devuelve la entidad actualizada.
+        :param supervisor: Instancia de Supervisor con los datos actualizados.
+        :return: Supervisor con los datos actualizados.
+        """
         query = """
             UPDATE supervisors
             SET first_name = %s, last_name = %s, email = %s, password = %s, rol = %s, active = %s, assigned_area = %s
@@ -69,6 +83,11 @@ class SupervisorRepository:
         )
 
     def get_by_id(self, supervisor_id: int) -> Optional[Supervisor]:
+        """
+        Busca y devuelve un supervisor por su ID.
+        :param supervisor_id: ID del supervisor a buscar.
+        :return: Supervisor si se encuentra, None si no existe.
+        """
         query = """
             SELECT id, first_name, last_name, email, password, rol, active, assigned_area
             FROM supervisors
@@ -92,6 +111,11 @@ class SupervisorRepository:
         return None
 
     def get_by_email(self, email: str) -> Optional[Supervisor]:
+        """
+        Busca y devuelve un supervisor por su correo electrónico.
+        :param email: Correo electrónico del supervisor a buscar.
+        :return: Supervisor si se encuentra, None si no existe.
+        """
         query = """
             SELECT id, first_name, last_name, email, password, rol, active, assigned_area
             FROM supervisors
@@ -115,6 +139,11 @@ class SupervisorRepository:
         return None
 
     def list_by_criteria(self, criteria: dict) -> List[Supervisor]:
+        """
+        Lista supervisores que cumplan con ciertos criterios de búsqueda.
+        :param criteria: Diccionario con los criterios de búsqueda (ejemplo: {'active': True, 'assigned_area': 'Zona Norte'}).
+        :return: Lista de supervisores que cumplen con los criterios.
+        """
         query = "SELECT id, first_name, last_name, email, password, rol, active, assigned_area FROM supervisors WHERE 1=1"
         params = []
 
@@ -145,6 +174,11 @@ class SupervisorRepository:
         ]
 
     def delete(self, supervisor_id: int) -> bool:
+        """
+        Elimina un supervisor por su ID.
+        :param supervisor_id: ID del supervisor a eliminar.
+        :return: True si se eliminó correctamente, False si no se encontró el registro.
+        """
         query = "DELETE FROM supervisors WHERE id = %s;"
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (supervisor_id,))
