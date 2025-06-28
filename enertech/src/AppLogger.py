@@ -1,5 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
+import os
 
 
 class AppLogger:
@@ -7,9 +8,25 @@ class AppLogger:
         pass
 
     @staticmethod
-    def setup_logger(logger_name: str) -> logging.Logger:
-        """Configura el sistema de logging"""
+    def setup_logger(logger_name: str, log_dir: str = "logs") -> logging.Logger:
+        """Configura el sistema de logging con archivos separados
+
+        Args:
+            logger_name: Nombre identificador del logger (usado para el archivo)
+            log_dir: Directorio donde se guardarán los logs (por defecto 'logs')
+
+        Returns:
+            Logger configurado
+        """
+        # Crear directorio si no existe
+        os.makedirs(log_dir, exist_ok=True)
+
         logger = logging.getLogger(logger_name)
+
+        # Evitar agregar handlers múltiples si el logger ya existe
+        if logger.handlers:
+            return logger
+
         logger.setLevel(logging.DEBUG)
 
         # Formato de los mensajes
@@ -21,8 +38,9 @@ class AppLogger:
         console_handler.setFormatter(formatter)
 
         # Handler para archivo (con rotación)
+        log_file = os.path.join(log_dir, f"{logger_name}.log")
         file_handler = RotatingFileHandler(
-            logger_name + '.log',
+            log_file,
             maxBytes=1024 * 1024,  # 1MB
             backupCount=5,
             encoding='utf-8'
