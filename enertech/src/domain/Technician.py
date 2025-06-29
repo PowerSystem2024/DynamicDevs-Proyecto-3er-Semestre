@@ -17,6 +17,10 @@ class Technician(User):
     def role(self) -> UserRole:
         return self._role
 
+    @role.setter
+    def role(self, value: UserRole):
+        self._role = value
+
     # Metodo privado que determina el rol del usuario
     def _determine_role(self):
         self._role = UserRole.TECHNICIAN  # Establece el rol del usuario como TECHNICIAN
