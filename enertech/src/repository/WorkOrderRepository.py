@@ -1,10 +1,11 @@
-from typing import Optional, List, Dict
+from typing import Optional, List
 from enertech.src.database.DatabaseManager import DatabaseManager
 from enertech.src.domain.WorkOrder import WorkOrder
 from enertech.src.domain.MaintenanceType import MaintenanceType
 from enertech.src.domain.PriorityLevel import PriorityLevel
 from enertech.src.domain.TimeUnit import TimeUnit
 from enertech.src.domain.Status import Status
+from src.repository.Criteria import Criteria
 
 
 # Repositorio para manejar operaciones de base de datos para órdenes de trabajo (WorkOrder)
@@ -18,8 +19,7 @@ class WorkOrderRepository:
         query = """
                 INSERT INTO WORK_ORDERS (title, assigned_to, created_by, asset_id, maintenance_type, priority, status,
                                          opened_at, estimated_time, estimated_time_unit, description)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
-                RETURNING id, title, assigned_to, created_by, asset_id, maintenance_type, priority, status, opened_at, 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id, title, assigned_to, created_by, asset_id, maintenance_type, priority, status, opened_at, 
                 resolved_at, estimated_time, estimated_time_unit, resolved_on_time, description, closure_comments; \
                 """
         # Abre cursor para ejecutar la consulta
@@ -95,35 +95,19 @@ class WorkOrderRepository:
             self._db_manager.close_connection()
             return self._row_to_entity(row) if row else None
 
-    def list_by_criteria(self, filters: Optional[Dict[str, any]] = None, sort: str = "id") -> Optional[List[WorkOrder]]:
-        # Lista las ordenes de trabajo que cumplan con ciertos criterios de búsqueda (filtros)
-        query = "SELECT * FROM WORK_ORDERS"
-        where_clauses = []
-        params = []
-
-        if filters:
-            # Por cada criterio recibido, agrega un filtro con comparación parcial (ILIKE %valor%)
-            for field, value in filters.items():
-                if value is not None:
-                    where_clauses.append(f"{field} ILIKE %s")
-                    params.append(f"%{value}%")
-
-        # Si hay filtros, los une con AND y los agrega al query
-        if where_clauses:
-            query += " WHERE " + " AND ".join(where_clauses)
-
-        # Agrega la cláusula ORDER BY para ordenar los resultados
-        query += f" ORDER BY {sort}"
-
-        with self._db_manager.get_connection().cursor() as cursor:
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            self._db_manager.close_connection()
-            # Convierte cada fila obtenida a objeto WorkOrder y retorna la lista
-            return [self._row_to_entity(row) for row in rows] if rows else None
+    def list_by_criteria(self, criteria: dict) -> List[WorkOrder]:
+        """
+        Lista las órdenes de trabajo que cumplan con ciertos criterios de búsqueda (filtros)
+        :param criteria: Diccionario con valores de tipo columna: valor. Ej.: {'created_by': '1', 'assigned_to': 5}
+        :return: Lista de órdenes filtrada. Si no aplican filtros, devuelve todos los registros de la tabla.
+        Puede devolver una lista vacía en caso de que no hallan registros.
+        """
+        _TABLE_NAME = "WORK_ORDERS"
+        results = Criteria.list_by_criteria(_TABLE_NAME, self._db_manager, criteria)
+        return [self._row_to_entity(result) for result in results]
 
     def delete(self, order_id: int) -> None:
-        # Elimina una orden de trabajo por ID
+        """Elimina una orden de trabajo por ID"""
         query = "DELETE FROM WORK_ORDERS WHERE id = %s"
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (order_id,))

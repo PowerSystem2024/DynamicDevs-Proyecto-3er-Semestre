@@ -1,7 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 from enertech.src.database.DatabaseManager import DatabaseManager
 from enertech.src.domain.Supervisor import Supervisor
 from src.domain.UserRole import UserRole
+from src.repository.Criteria import Criteria
+
 
 # Repositorio para manejar operaciones de base de datos para supervisores
 class SupervisorRepository:
@@ -112,22 +114,8 @@ class SupervisorRepository:
         :param criteria: Diccionario con los criterios de búsqueda (ejemplo: {'active': True, 'assigned_area': 'Zona Norte'}).
         :return: Lista de supervisores que cumplen con los criterios.
         """
-        query = "SELECT id, first_name, last_name, email, password, rol, active, assigned_area FROM supervisors WHERE 1=1"
-        params = []
-
-        if 'active' in criteria:
-            query += " AND active = %s"
-            params.append(criteria['active'])
-
-        if 'assigned_area' in criteria:
-            query += " AND assigned_area = %s"
-            params.append(criteria['assigned_area'])
-
-        with self._db_manager.get_connection().cursor() as cursor:
-            cursor.execute(query, tuple(params))
-            results = cursor.fetchall()
-            self._db_manager.close_connection()
-
+        _TABLE_NAME = "SUPERVISORS"
+        results = Criteria.list_by_criteria(_TABLE_NAME, self._db_manager, criteria)
         return [self._map_to_supervisor(row) for row in results]
 
     def delete(self, supervisor_id: int) -> bool:

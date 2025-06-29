@@ -1,6 +1,7 @@
-from typing import Optional, List, Dict
+from typing import Optional, List
 from enertech.src.database.DatabaseManager import DatabaseManager
 from enertech.src.domain.IndustrialAsset import IndustrialAsset
+from enertech.src.repository.Criteria import Criteria
 
 
 class IndustrialAssetRepository:
@@ -102,40 +103,17 @@ class IndustrialAssetRepository:
                 return self._row_to_entity(row)
         return None
 
-    def list_by_criteria(self, filters: Optional[Dict[str, any]] = None, sort: str = "id") -> Optional[List[IndustrialAsset]]:
+    def list_by_criteria(self, filters: dict) -> List[IndustrialAsset]:
         """
         Obtiene assets industriales con filtros opcionales.
         Args:
-            filters: Diccionario con filtros por atributo (ej.: {'asset_type': 'turbina', 'location': 'planta 1'})
-            sort: Campo por el cual ordenar los resultados (por defecto 'id'). Ej.: 'acquisition_date'
+            filters: Diccionario con filtros columna : valor (ej.: {'asset_type': 'turbina', 'location': 'planta 1'})
         Returns:
             Lista de IndustrialAsset que cumplen con los filtros (o todos si no hay filtros)
         """
-        base_query = """SELECT *
-                        FROM INDUSTRIAL_ASSETS"""
-
-        where_clauses = []
-        params = []
-
-        if filters:
-            for field, value in filters.items():
-                if value is not None:
-                    where_clauses.append(f"{field} ILIKE %s")  # ILIKE para case-insensitive
-                    params.append(f"%{value}%")  # Wildcards para búsqueda parcial
-
-        if where_clauses:
-            base_query += " WHERE " + " AND ".join(where_clauses)
-
-        if sort:
-            base_query += f" ORDER BY {sort}"
-
-        with self._db_manager.get_connection().cursor() as cursor:
-            cursor.execute(base_query, params)
-            results = cursor.fetchall()
-            self._db_manager.close_connection()
-            if results:
-                return [self._row_to_entity(row) for row in results]
-        return None
+        _TABLE_NAME = "INDUSTRIAL_ASSETS"
+        results = Criteria.list_by_criteria(_TABLE_NAME, self._db_manager, filters)
+        return [self._row_to_entity(result) for result in results]
 
     def delete(self, asset_id: int) -> None:
         """
