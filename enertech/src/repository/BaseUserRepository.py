@@ -26,7 +26,7 @@ class BaseUserRepository(ABC):
         pass
 
     @abstractmethod
-    def exists_by_email(self, email: str) -> bool:
+    def email_exist(self, email: str) -> bool:
         pass
 
     @abstractmethod

@@ -100,11 +100,11 @@ class TechnicianRepository(BaseUserRepository):
             row = cursor.fetchone()
         return self._row_to_entity(row) if row else None
 
-    def exists_by_email(self, email: str) -> bool:
+    def email_exist(self, email: str) -> bool:
         """
-        Verifica si existe un técnico con el correo electrónico proporcionado.
+        Verifica si un correo electrónico ya está registrado en la base de datos.
         :param email: Correo electrónico a verificar.
-        :return: True si existe, False en caso contrario.
+        :return: True si el correo existe, False en caso contrario.
         """
         query = "SELECT COUNT(*) FROM technicians WHERE email = %s"
         with self._db_manager.get_connection().cursor() as cursor:
