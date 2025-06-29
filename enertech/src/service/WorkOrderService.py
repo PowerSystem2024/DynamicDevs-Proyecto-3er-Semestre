@@ -1,23 +1,23 @@
-from datetime import datetime 
-from enertech.src.repository.WorkOrderRepository import WorkOrderRepository # repositorio encargado de manejar las órdenes de trabajo.
+from typing import Optional
+from enertech.src.repository.WorkOrderRepository import WorkOrderRepository
 from enertech.src.domain.WorkOrder import WorkOrder
 from enertech.src.domain.WorkOrderData import WorkOrderData
-
 from enertech.src.domain.Supervisor import Supervisor
 from enertech.src.domain.Technician import Technician
 from enertech.src.domain.IndustrialAsset import IndustrialAsset
-
 from enertech.src.domain.MaintenanceType import MaintenanceType
 from enertech.src.domain.PriorityLevel import PriorityLevel
 from enertech.src.domain.Status import Status
 from enertech.src.domain.TimeUnit import TimeUnit
+
 
 # Definimos el atributo protegido y el constructor público con parámetro.
 class WorkOrderService:
     def __init__(self, repository: WorkOrderRepository):
         self._repository = repository
 
-    def create_work_order(self, order_data: WorkOrderData, supervisor: Supervisor, technician: Technician, industrial_asset: IndustrialAsset) -> WorkOrder:
+    def create_work_order(self, order_data: WorkOrderData, supervisor: Supervisor, technician: Optional[Technician],
+                          industrial_asset: IndustrialAsset) -> WorkOrder:
         for field_name in ['title', 'description']:
             value = getattr(order_data, field_name, None)
             if not isinstance(value, str):
@@ -46,16 +46,14 @@ class WorkOrderService:
             raise ValueError("supervisor no puede ser nulo")
 
         order = WorkOrder(
-            title = order_data.title.strip(),
-            maintenance_type = order_data.maintenance_type,
-            priority = order_data.priority,
-            status = None,
-            estimated_time = order_data.estimated_time,
-            estimated_time_unit = order_data.estimated_time_unit,
-            description = order_data.description.strip(),
-            opened_at = datetime.now(),
-            created_by = supervisor.id,
-            industrial_asset = industrial_asset
+            title=order_data.title.strip(),
+            created_by=supervisor.id,
+            asset_id=industrial_asset.id,
+            maintenance_type=order_data.maintenance_type,
+            priority=order_data.priority,
+            estimated_time=order_data.estimated_time,
+            estimated_time_unit=order_data.estimated_time_unit,
+            description=order_data.description.strip()
         )
 
         if technician:
@@ -65,5 +63,5 @@ class WorkOrderService:
             order.assigned_to = None
             order.status = Status.UNASSIGNED
 
-        self._repository.save(order)
+        order = self._repository.save(order)
         return order
