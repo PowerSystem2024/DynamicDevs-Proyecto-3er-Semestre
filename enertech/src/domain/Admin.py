@@ -16,6 +16,10 @@ class Admin(User):
     def role(self) -> UserRole:
         return self._role
 
+    @role.setter
+    def role(self, value: UserRole):
+        self._role = value
+
     def _determine_role(self):
         self._role = UserRole.ADMIN  # Establece el rol del usuario como ADMIN
 
