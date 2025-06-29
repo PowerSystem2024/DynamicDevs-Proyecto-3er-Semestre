@@ -1,9 +1,9 @@
 from typing import Optional, List
 from enertech.src.database.DatabaseManager import DatabaseManager
 from enertech.src.domain.Technician import Technician
-from src.domain.UserRole import UserRole
-from src.repository.BaseUserRepository import BaseUserRepository
-from src.repository.Criteria import Criteria
+from enertech.src.domain.UserRole import UserRole
+from enertech.src.repository.BaseUserRepository import BaseUserRepository
+from enertech.src.repository.Criteria import Criteria
 
 
 # Repositorio para manejar operaciones de base de datos para técnicos (Technician)
@@ -98,8 +98,20 @@ class TechnicianRepository(BaseUserRepository):
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (email,))
             row = cursor.fetchone()
-
         return self._row_to_entity(row) if row else None
+
+    def exists_by_email(self, email: str) -> bool:
+        """
+        Verifica si existe un técnico con el correo electrónico proporcionado.
+        :param email: Correo electrónico a verificar.
+        :return: True si existe, False en caso contrario.
+        """
+        query = "SELECT COUNT(*) FROM technicians WHERE email = %s"
+        with self._db_manager.get_connection().cursor() as cursor:
+            cursor.execute(query, (email,))
+            count = cursor.fetchone()[0]
+            self._db_manager.close_connection()
+        return count > 0
 
     def list_by_criteria(self, criteria: dict) -> List[Technician]:
         """
