@@ -7,7 +7,7 @@ from enertech.src.domain.User import User
 
 class BaseUserRepository(ABC):
     def __init__(self, db_manager: DatabaseManager):
-        self.db_manager = db_manager
+        self._db_manager = db_manager
 
     @abstractmethod
     def save(self, user: User) -> User:
