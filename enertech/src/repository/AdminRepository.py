@@ -1,15 +1,18 @@
 from typing import Optional, List, Dict
-from src.database.DatabaseManager import DatabaseManager
-from src.domain.Admin import Admin
+from enertech.src.database.DatabaseManager import DatabaseManager
+from enertech.src.domain.Admin import Admin
+from enertech.src.domain.UserRole import UserRole
+from enertech.src.repository.BaseUserRepository import BaseUserRepository
+
 
 # Repositorio para manejar operaciones de base de datos para administradores (Admin)
-class AdminRepository:
+class AdminRepository(BaseUserRepository):
     def __init__(self, db_manager: DatabaseManager):
         """
         Constructor que inicializa el repositorio con un gestor de base de datos.
         :param db_manager: Instancia de DatabaseManager para manejar conexiones a la base de datos.
         """
-        self._db_manager = db_manager
+        super().__init__(db_manager)
 
     def save(self, admin: Admin) -> Admin:
         """
@@ -18,19 +21,18 @@ class AdminRepository:
         :return: Admin con los datos insertados, incluyendo el ID generado.
         """
         query = """
-            INSERT INTO admins (
-                first_name, last_name, email, password, rol, active, department
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, first_name, last_name, email, password, rol, active, department;
-        """
+                INSERT INTO admins (first_name, last_name, email, password, rol, active, department)
+                VALUES (%s, %s, %s, %s, %s, %s,
+                        %s) RETURNING id, first_name, last_name, email, password, rol, active, department; \
+                """
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (
                 admin.first_name,
                 admin.last_name,
                 admin.email,
                 admin.password,
-                admin.rol,
-                admin.active,
+                admin.role,
+                admin.is_active,
                 admin.department
             ))
             result = cursor.fetchone()
@@ -44,20 +46,24 @@ class AdminRepository:
         :return: Admin con los datos actualizados, o None si no se encontró el registro.
         """
         query = """
-            UPDATE admins
-            SET first_name = %s, last_name = %s, email = %s, password = %s, rol = %s,
-                active = %s, department = %s
-            WHERE id = %s
-            RETURNING id, first_name, last_name, email, password, rol, active, department;
-        """
+                UPDATE admins
+                SET first_name = %s,
+                    last_name  = %s,
+                    email      = %s,
+                    password   = %s,
+                    rol        = %s,
+                    active     = %s,
+                    department = %s
+                WHERE id = %s RETURNING id, first_name, last_name, email, password, rol, active, department; \
+                """
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (
                 admin.first_name,
                 admin.last_name,
                 admin.email,
                 admin.password,
-                admin.rol,
-                admin.active,
+                admin.role,
+                admin.is_active,
                 admin.department,
                 admin.id
             ))
@@ -88,12 +94,22 @@ class AdminRepository:
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (email,))
             row = cursor.fetchone()
-
         return self._row_to_entity(row) if row else None
+
+    def email_exist(self, email: str) -> bool:
+        """
+        Verifica si un correo electrónico ya está registrado en la base de datos.
+        :param email: Correo electrónico a verificar.
+        :return: True si el correo existe, False en caso contrario.
+        """
+        query = "SELECT 1 FROM admins WHERE email = %s"
+        with self._db_manager.get_connection().cursor() as cursor:
+            cursor.execute(query, (email,))
+            return cursor.fetchone() is not None
 
     def list_by_criteria(self, criteria: Optional[Dict[str, any]] = None, sort: str = "id") -> Optional[List[Admin]]:
         """
-        Lista administradores que cumplan con ciertos criterios de búsqueda.
+        Se obtiene una lista de administradores que cumplan con ciertos criterios de búsqueda.
         :param criteria: Diccionario con los criterios de búsqueda (ejemplo: {'active': True}).
         :param sort: Campo por el cual ordenar los resultados (por defecto: 'id').
         :return: Lista de Admin que cumplen con los criterios, o None si no hay resultados.
@@ -131,19 +147,19 @@ class AdminRepository:
             return cursor.rowcount > 0
 
     @staticmethod
-    def _row_to_entity(row) -> Admin:
+    def _row_to_entity(db_result: tuple[any, ...]) -> Admin:
         """
         Convierte una fila de la base de datos en una instancia de Admin.
-        :param row: Fila obtenida de la base de datos.
+        :param db_result: Resultados obtenidos de la la consulta.
         :return: Instancia de Admin con los datos de la fila.
         """
-        return Admin(
-            id=row[0],
-            first_name=row[1],
-            last_name=row[2],
-            email=row[3],
-            password=row[4],
-            rol=row[5],
-            active=row[6],
-            department=row[7]
-        )
+        admin = Admin(
+            first_name=db_result[1],
+            last_name=db_result[2],
+            email=db_result[3],
+            password=db_result[4],
+            department=db_result[7])
+        admin.id = db_result[0]
+        admin.role = UserRole(db_result[5])
+        admin.is_active = db_result[6]
+        return admin
