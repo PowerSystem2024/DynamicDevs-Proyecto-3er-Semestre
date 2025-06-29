@@ -28,4 +28,53 @@ class SupervisorService:
 
         # Guardamos el servicio de activos industriales
         self._industrialAssetService = industrialAssetService
+        
+    
+        def create_supervisor(self, base_data: UserBaseData, assigned_area: str) -> Supervisor:
+        
+            self._validate_type(base_data, assigned_area)
+            self._validate_content(base_data, assigned_area)
+        
+            if self._repository.email_exists(base_data.email):
+                raise ValueError("El email ya existe en la base de datos")
+            
+        # Creación del supervisor
+        supervisor = Supervisor(
+            first_name=base_data.first_name,
+            last_name=base_data.last_name,
+            email=base_data.email,
+            password=base_data.password,
+            assigned_area=assigned_area
+        )
+        
+        # Persistencia y retorno
+        return self._repository.save(supervisor)
+
+    def _validate_type(self, base_data: UserBaseData, assigned_area: str):
+        if not isinstance(base_data.first_name, str):
+            raise TypeError("first_name debe ser una cadena de texto")
+        if not isinstance(base_data.last_name, str):
+            raise TypeError("last_name debe ser una cadena de texto")
+        if not isinstance(base_data.email, str):
+            raise TypeError("email debe ser una cadena de texto")
+        if not isinstance(base_data.password, str):
+            raise TypeError("password debe ser una cadena de texto")
+        if not isinstance(assigned_area, str):
+            raise TypeError("assigned_area debe ser una cadena de texto")
+        
+    def _validate_content(self, base_data: UserBaseData, assigned_area: str):
+        self._validate_string_field("first_name", base_data.first_name)
+        self._validate_string_field("last_name", base_data.last_name)
+        self._validate_string_field("email", base_data.email)
+        self._validate_string_field("password", base_data.password, min_length=8)
+        self._validate_string_field("assigned_area", assigned_area)
+        
+    def _validate_string_field(self, field_name: str, value: str, min_length: int = 2):
+        if not value or value.strip() == "":
+            raise ValueError(f"{field_name} no puede estar vacío")
+        if len(value.strip()) < min_length:
+            raise ValueError(f"{field_name} debe tener al menos {min_length} caracteres")
+        if not any(char.isalpha() for char in value):
+            raise ValueError(f"{field_name} debe contener al menos una letra")
+        # Aquí podrían añadirse validaciones específicas para el área
 
