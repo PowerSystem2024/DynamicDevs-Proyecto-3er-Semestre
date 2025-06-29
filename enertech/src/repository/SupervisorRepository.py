@@ -1,6 +1,7 @@
 from typing import Optional, List
-from src.database.DatabaseManager import DatabaseManager
-from src.domain.Supervisor import Supervisor
+from enertech.src.database.DatabaseManager import DatabaseManager
+from enertech.src.domain.Supervisor import Supervisor
+from src.domain.UserRole import UserRole
 
 # Repositorio para manejar operaciones de base de datos para supervisores
 class SupervisorRepository:
@@ -29,22 +30,14 @@ class SupervisorRepository:
                 supervisor.last_name,
                 supervisor.email,
                 supervisor.password,
-                supervisor.rol,
-                supervisor.active,
+                supervisor.role.value,
+                supervisor.is_active,
                 supervisor.assigned_area
             ))
+            self._db_manager.commit_transaction()
             result = cursor.fetchone()
-
-        return Supervisor(
-            id=result[0],
-            first_name=result[1],
-            last_name=result[2],
-            email=result[3],
-            password=result[4],
-            rol=result[5],
-            active=result[6],
-            assigned_area=result[7]
-        )
+            self._db_manager.close_connection()
+        return self._map_to_supervisor(result)
 
     def update(self, supervisor: Supervisor) -> Supervisor:
         """
@@ -64,23 +57,15 @@ class SupervisorRepository:
                 supervisor.last_name,
                 supervisor.email,
                 supervisor.password,
-                supervisor.rol,
-                supervisor.active,
+                supervisor.role.value,
+                supervisor.is_active,
                 supervisor.assigned_area,
                 supervisor.id
             ))
+            self._db_manager.commit_transaction()
             result = cursor.fetchone()
-
-        return Supervisor(
-            id=result[0],
-            first_name=result[1],
-            last_name=result[2],
-            email=result[3],
-            password=result[4],
-            rol=result[5],
-            active=result[6],
-            assigned_area=result[7]
-        )
+            self._db_manager.close_connection()
+        return self._map_to_supervisor(result)
 
     def get_by_id(self, supervisor_id: int) -> Optional[Supervisor]:
         """
@@ -96,18 +81,9 @@ class SupervisorRepository:
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (supervisor_id,))
             result = cursor.fetchone()
-
+            self._db_manager.close_connection()
         if result:
-            return Supervisor(
-                id=result[0],
-                first_name=result[1],
-                last_name=result[2],
-                email=result[3],
-                password=result[4],
-                rol=result[5],
-                active=result[6],
-                assigned_area=result[7]
-            )
+            return self._map_to_supervisor(result)
         return None
 
     def get_by_email(self, email: str) -> Optional[Supervisor]:
@@ -124,18 +100,10 @@ class SupervisorRepository:
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (email,))
             result = cursor.fetchone()
+            self._db_manager.close_connection()
 
         if result:
-            return Supervisor(
-                id=result[0],
-                first_name=result[1],
-                last_name=result[2],
-                email=result[3],
-                password=result[4],
-                rol=result[5],
-                active=result[6],
-                assigned_area=result[7]
-            )
+            return self._map_to_supervisor(result)
         return None
 
     def list_by_criteria(self, criteria: dict) -> List[Supervisor]:
@@ -158,20 +126,9 @@ class SupervisorRepository:
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, tuple(params))
             results = cursor.fetchall()
+            self._db_manager.close_connection()
 
-        return [
-            Supervisor(
-                id=row[0],
-                first_name=row[1],
-                last_name=row[2],
-                email=row[3],
-                password=row[4],
-                rol=row[5],
-                active=row[6],
-                assigned_area=row[7]
-            )
-            for row in results
-        ]
+        return [self._map_to_supervisor(row) for row in results]
 
     def delete(self, supervisor_id: int) -> bool:
         """
@@ -182,4 +139,21 @@ class SupervisorRepository:
         query = "DELETE FROM supervisors WHERE id = %s;"
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (supervisor_id,))
-            return cursor.rowcount > 0
+            self._db_manager.commit_transaction()
+            result = cursor.rowcount
+            self._db_manager.close_connection()
+            return result > 0
+
+    @staticmethod
+    def _map_to_supervisor(db_result: tuple[any, ...]) -> Supervisor:
+        supervisor = Supervisor(
+            first_name=db_result[1],
+            last_name=db_result[2],
+            email=db_result[3],
+            password=db_result[4],
+            assigned_area=db_result[7])
+        supervisor.id = db_result[0]
+        supervisor.role = UserRole(db_result[5])
+        supervisor.is_active = db_result[6]
+
+        return supervisor

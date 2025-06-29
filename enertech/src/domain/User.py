@@ -56,6 +56,20 @@ class User(ABC):
         """
         pass
 
+    @role.setter
+    @abstractmethod
+    def role(self, value: UserRole):
+        """
+        Sets the role of the user.
+        :param value: role of the user.
+        :return:
+        """
+        pass
+
+    @id.setter
+    def id(self, value: int):
+        self._id = value
+
     # Setters
     @first_name.setter
     def first_name(self, value: str):
