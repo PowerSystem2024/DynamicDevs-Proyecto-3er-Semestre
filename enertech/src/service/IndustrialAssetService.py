@@ -43,6 +43,7 @@ class IndustrialAssetService:
         
         return self._repository.save(asset)
 
+    @staticmethod
     def _validate_and_parse_date(self, date_str: str) -> datetime.date:
         """Valida y convierte una cadena de fecha en formato dd/mm/yyyy a date."""
         if not isinstance(date_str, str):
@@ -57,6 +58,7 @@ class IndustrialAssetService:
         except ValueError as e:
             raise ValueError("Formato de fecha inválido. Use dd/mm/yyyy") from e
 
+    @staticmethod
     def _validate_text_field(self, value: str, field_name: str) -> None:
         """Valida campos de texto genéricos según requisitos."""
         if not isinstance(value, str):

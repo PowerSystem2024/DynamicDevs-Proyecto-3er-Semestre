@@ -16,6 +16,10 @@ class Supervisor(User):
     def role(self) -> UserRole:
         return self._role
 
+    @role.setter
+    def role(self, value: UserRole):
+        self._role = value
+
     def _determine_role(self):
         self._role = UserRole.SUPERVISOR  # Establece el rol del usuario como SUPERVISOR
 
@@ -33,4 +37,5 @@ class Supervisor(User):
 
     # Devuelve una representación como string del objeto Supervisor
     def __str__(self):
-        return f"Supervisor(id={self.id}, name={self.first_name} {self.last_name}, area_asignada={self.assigned_area})"
+        return (f"Supervisor(id={self.id}, name={self.first_name} {self.last_name}, "
+                f"email={self._email}, role={self._role}, area_asignada={self.assigned_area})")
