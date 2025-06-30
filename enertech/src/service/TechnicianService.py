@@ -19,6 +19,14 @@ class TechnicianService:
                                 max_active_orders=max_active_orders)
         return self._repository.save(technician)
 
+    def get_technician_by_id(self, technician_id: int) -> Technician:
+        if not isinstance(technician_id, int) or technician_id < 0:
+            raise TypeError("technician_id debe ser un entero positivo")
+        technician = self._repository.get_by_id(technician_id)
+        if not technician:
+            raise ValueError(f"Técnico con ID {technician_id} no encontrado")
+        return technician
+
     @staticmethod
     def _validate_type(base_data: UserBaseData, max_active_orders: int):
         if not isinstance(base_data.first_name, str):

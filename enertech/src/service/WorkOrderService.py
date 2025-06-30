@@ -58,3 +58,24 @@ class WorkOrderService:
             order.status = Status.UNASSIGNED
         order = self._repository.save(order)
         return order
+
+    def get_work_order_by_id(self, work_order_id: int) -> WorkOrder:
+        if not isinstance(work_order_id, int) or work_order_id <= 0:
+            raise ValueError("work_order_id debe ser un número entero positivo")
+        work_order = self._repository.get_by_id(work_order_id)
+        if not work_order:
+            raise ValueError(f"Orden de trabajo con ID {work_order_id} no encontrada")
+        return work_order
+
+    def assign_technician(self, work_order: WorkOrder, technician: Technician) -> WorkOrder:
+        if not isinstance(work_order, WorkOrder) or work_order is None:
+            raise TypeError("work_order debe ser una instancia de WorkOrder")
+        if not isinstance(technician, Technician) or technician is None:
+            raise TypeError("technician debe ser una instancia de Technician")
+        orders_assigned_to_this_technician = self._repository.list_by_criteria(
+            {'assigned_to': technician.id, 'status': Status.IN_PROGRESS})
+        if len(orders_assigned_to_this_technician) >= technician.max_active_orders:
+            raise ValueError("El técnico ya tiene el máximo de órdenes de trabajo activas")
+        work_order.assigned_to = technician.id
+        work_order.status = Status.IN_PROGRESS
+        return self._repository.update(work_order)

@@ -1,6 +1,8 @@
 # Importamos el repositorio que maneja los datos de los supervisores
 from enertech.src.domain.Supervisor import Supervisor
 from enertech.src.domain.UserBaseData import UserBaseData
+from enertech.src.domain.WorkOrder import WorkOrder
+from enertech.src.domain.WorkOrderData import WorkOrderData
 from enertech.src.repository.SupervisorRepository import SupervisorRepository
 
 # Importamos los servicios que el supervisor puede utilizar
@@ -29,6 +31,49 @@ class SupervisorService:
                                 email=base_data.email, password=base_data.password, assigned_area=assigned_area)
         # Persistencia y retorno
         return self._repository.save(supervisor)
+
+    def update_supervisor_details(self, supervisor_id: int, base_data: UserBaseData, assigned_area: str) -> Supervisor:
+        self._validate_type(base_data, assigned_area)
+        self._validate_content(base_data, assigned_area)
+        # Verificamos si el supervisor existe
+        supervisor = self.get_supervisor_by_id(supervisor_id)
+        # Actualizamos los datos del supervisor
+        if base_data.first_name and base_data.last_name not in (None, ""):
+            supervisor.first_name = base_data.first_name
+        if base_data.last_name and base_data.last_name not in (None, ""):
+            supervisor.last_name = base_data.last_name
+        if base_data.email and base_data.email not in (None, ""):
+            if self._repository.email_exist(base_data.email):
+                raise ValueError("El email ya existe en la base de datos")
+            supervisor.email = base_data.email
+        if base_data.password and base_data.password not in (None, ""):
+            supervisor.password = base_data.password
+        if assigned_area and assigned_area not in (None, ""):
+            supervisor.assigned_area = assigned_area
+        # Guardamos los cambios y retornamos el supervisor actualizado
+        return self._repository.update(supervisor)
+
+    def initiate_work_order(self, order_data: WorkOrderData, technician_id: int, asset_id: int,
+                            supervisor_id: int) -> WorkOrder:
+        technician = self._technician_service.get_technician_by_id(technician_id)
+        asset = self._industrial_asset_service.get_asset_by_id(asset_id)
+        supervisor = self.get_supervisor_by_id(supervisor_id)
+        # Guardamos la orden de trabajo y retornamos
+        return self._work_order_service.create_work_order(order_data, supervisor, technician, asset)
+
+    def assign_work_order(self, tehcnician_id: int, work_order_id: int) -> WorkOrder:
+        technician = self._technician_service.get_technician_by_id(tehcnician_id)
+        work_order = self._work_order_service.get_work_order_by_id(work_order_id)
+        return self._work_order_service.assign_technician(work_order, technician)
+
+    def get_supervisor_by_id(self, supervisor_id: int) -> Supervisor:
+        if not isinstance(supervisor_id, int) or supervisor_id <= 0:
+            raise ValueError("El ID del supervisor debe ser un número entero positivo")
+        # Obtenemos el supervisor por su ID
+        supervisor = self._repository.get_by_id(supervisor_id)
+        if not supervisor:
+            raise ValueError(f"Supervisor con {supervisor_id} no encontrado")
+        return supervisor
 
     @staticmethod
     def _validate_type(base_data: UserBaseData, assigned_area: str):
