@@ -3,6 +3,7 @@ from enertech.src.database.DatabaseManager import DatabaseManager
 from enertech.src.domain.Admin import Admin
 from enertech.src.domain.UserRole import UserRole
 from enertech.src.repository.BaseUserRepository import BaseUserRepository
+from enertech.src.repository.Criteria import Criteria
 
 
 # Repositorio para manejar operaciones de base de datos para administradores (Admin)
@@ -35,8 +36,9 @@ class AdminRepository(BaseUserRepository):
                 admin.is_active,
                 admin.department
             ))
+            self._db_manager.commit_transaction()
             result = cursor.fetchone()
-
+            self._db_manager.close_connection()
         return self._row_to_entity(result) if result else None
 
     def update(self, admin: Admin) -> Optional[Admin]:
@@ -67,8 +69,9 @@ class AdminRepository(BaseUserRepository):
                 admin.department,
                 admin.id
             ))
+            self._db_manager.commit_transaction()
             result = cursor.fetchone()
-
+            self._db_manager.close_connection()
         return self._row_to_entity(result) if result else None
 
     def get_by_id(self, admin_id: int) -> Optional[Admin]:
@@ -81,7 +84,7 @@ class AdminRepository(BaseUserRepository):
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (admin_id,))
             row = cursor.fetchone()
-
+            self._db_manager.close_connection()
         return self._row_to_entity(row) if row else None
 
     def get_by_email(self, email: str) -> Optional[Admin]:
@@ -94,6 +97,7 @@ class AdminRepository(BaseUserRepository):
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (email,))
             row = cursor.fetchone()
+            self._db_manager.close_connection()
         return self._row_to_entity(row) if row else None
 
     def email_exist(self, email: str) -> bool:
@@ -105,35 +109,19 @@ class AdminRepository(BaseUserRepository):
         query = "SELECT 1 FROM admins WHERE email = %s"
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (email,))
+            self._db_manager.close_connection()
             return cursor.fetchone() is not None
 
-    def list_by_criteria(self, criteria: Optional[Dict[str, any]] = None, sort: str = "id") -> Optional[List[Admin]]:
+    def list_by_criteria(self, criteria: dict) -> List[Admin]:
         """
         Se obtiene una lista de administradores que cumplan con ciertos criterios de búsqueda.
         :param criteria: Diccionario con los criterios de búsqueda (ejemplo: {'active': True}).
         :param sort: Campo por el cual ordenar los resultados (por defecto: 'id').
         :return: Lista de Admin que cumplen con los criterios, o None si no hay resultados.
         """
-        query = "SELECT * FROM admins"
-        filters = []
-        params = []
-
-        if criteria:
-            for field, value in criteria.items():
-                if value is not None:
-                    filters.append(f"{field} ILIKE %s")
-                    params.append(f"%{value}%")
-
-        if filters:
-            query += " WHERE " + " AND ".join(filters)
-
-        query += f" ORDER BY {sort}"
-
-        with self._db_manager.get_connection().cursor() as cursor:
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-
-        return [self._row_to_entity(row) for row in rows] if rows else None
+        _TABLE_NAME = "admins"
+        results = Criteria.list_by_criteria(_TABLE_NAME, self._db_manager, criteria)
+        return [self._row_to_entity(result) for result in results]
 
     def delete(self, admin_id: int) -> bool:
         """
@@ -144,7 +132,10 @@ class AdminRepository(BaseUserRepository):
         query = "DELETE FROM admins WHERE id = %s"
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (admin_id,))
-            return cursor.rowcount > 0
+            self._db_manager.commit_transaction()
+            result = cursor.rowcount
+            self._db_manager.close_connection()
+        return result > 0
 
     @staticmethod
     def _row_to_entity(db_result: tuple[any, ...]) -> Admin:

@@ -39,7 +39,6 @@ class TechnicianRepository(BaseUserRepository):
             self._db_manager.commit_transaction()
             result = cursor.fetchone()
             self._db_manager.close_connection()
-
         return self._row_to_entity(result) if result else None
 
     def update(self, technician: Technician) -> Optional[Technician]:
@@ -68,8 +67,7 @@ class TechnicianRepository(BaseUserRepository):
                 technician.role.value,
                 technician.is_active,
                 technician.max_active_orders,
-                technician.id
-            ))
+                technician.id))
             self._db_manager.commit_transaction()
             result = cursor.fetchone()
             self._db_manager.close_connection()
@@ -85,7 +83,7 @@ class TechnicianRepository(BaseUserRepository):
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (technician_id,))
             row = cursor.fetchone()
-
+            self._db_manager.close_connection()
         return self._row_to_entity(row) if row else None
 
     def get_by_email(self, email: str) -> Optional[Technician]:
@@ -98,6 +96,7 @@ class TechnicianRepository(BaseUserRepository):
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (email,))
             row = cursor.fetchone()
+            self._db_manager.close_connection()
         return self._row_to_entity(row) if row else None
 
     def email_exist(self, email: str) -> bool:
@@ -132,7 +131,10 @@ class TechnicianRepository(BaseUserRepository):
         query = "DELETE FROM technicians WHERE id = %s"
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, (technician_id,))
-            return cursor.rowcount > 0
+            self._db_manager.commit_transaction()
+            resutl = cursor.rowcount
+            self._db_manager.close_connection()
+            return resutl > 0
 
     @staticmethod
     def _row_to_entity(row) -> Technician:

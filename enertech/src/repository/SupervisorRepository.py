@@ -136,7 +136,6 @@ class SupervisorRepository(BaseUserRepository):
             cursor.execute(query, (email,))
             result = cursor.fetchone()
             self._db_manager.close_connection()
-
         if result:
             return self._map_to_supervisor(result)
         return None
@@ -176,5 +175,4 @@ class SupervisorRepository(BaseUserRepository):
         supervisor.id = db_result[0]
         supervisor.role = UserRole(db_result[5])
         supervisor.is_active = db_result[6]
-
         return supervisor
