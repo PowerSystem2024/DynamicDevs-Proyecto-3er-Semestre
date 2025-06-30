@@ -2,6 +2,7 @@ from enertech.src.domain.Technician import Technician
 from enertech.src.domain.UserBaseData import UserBaseData
 from enertech.src.repository.TechnicianRepository import TechnicianRepository
 from enertech.src.service.WorkOrderService import WorkOrderService
+from enertech.src.domain.WorkOrder import WorkOrder
 
 
 class TechnicianService:
@@ -26,6 +27,13 @@ class TechnicianService:
         if not technician:
             raise ValueError(f"Técnico con ID {technician_id} no encontrado")
         return technician
+
+    def mark_order_as_resolved(self, order_id: int, technician_id: int, closure_comments: str) -> WorkOrder:
+        order = self._work_order_service.get_work_order_by_id(order_id)
+        technician = self.get_technician_by_id(technician_id)
+        if order.assigned_to != technician.id:
+            raise PermissionError("La orden de trabajo no pertenece al técnico indicado")
+        return self._work_order_service.resolve_order(order, closure_comments)
 
     @staticmethod
     def _validate_type(base_data: UserBaseData, max_active_orders: int):

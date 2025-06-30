@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from enertech.src.repository.WorkOrderRepository import WorkOrderRepository
 from enertech.src.domain.WorkOrder import WorkOrder
@@ -79,3 +80,12 @@ class WorkOrderService:
         work_order.assigned_to = technician.id
         work_order.status = Status.IN_PROGRESS
         return self._repository.update(work_order)
+
+    def resolve_order(self, order: WorkOrder, closure_coments: str) -> WorkOrder:
+        order.closure_comments = closure_coments
+        order.status = Status.RESOLVED
+        order.resolved_at = datetime.now()
+        return self._repository.update(order)
+
+
+
