@@ -13,14 +13,9 @@ from enertech.src.service.WorkOrderService import WorkOrderService
 # Declaramos la clase AdminService, que representa el servicio para el rol de administrador
 class AdminService:
     # El constructor recibe todos los servicios y repositorio que el admin necesita
-    def __init__(
-            self,
-            repository: AdminRepository,
-            technician_service: TechnicianService,
-            supervisor_service: SupervisorService,
-            industrial_asset_service: IndustrialAssetService,
-            work_order_service: WorkOrderService
-    ):
+    def __init__(self, repository: AdminRepository, technician_service: TechnicianService,
+                 supervisor_service: SupervisorService, industrial_asset_service: IndustrialAssetService,
+                 work_order_service: WorkOrderService):
         self._repository = repository  # Guardamos el repositorio en un atributo privado
         self._technician_service = technician_service  # Guardamos el servicio de técnicos
         self._supervisor_service = supervisor_service  # Guardamos el servicio de supervisores
@@ -30,7 +25,6 @@ class AdminService:
     def create_admin(self, user_data: UserBaseData, department: str) -> Admin:
         """
         Crea un nuevo administrador con los datos proporcionados.
-
         :param user_data: Datos del usuario base para el administrador.
         :param department: Departamento al que pertenece el administrador.
         :return: Instancia del administrador creado.
@@ -40,7 +34,6 @@ class AdminService:
         # Validamos que los datos del usuario sean correctos
         if not isinstance(user_data, UserBaseData):
             raise ValueError("user_data debe ser una instancia de UserBaseData")
-
         # Creamos una nueva instancia de Admin con los datos proporcionados
         admin = Admin(
             first_name=user_data.first_name,

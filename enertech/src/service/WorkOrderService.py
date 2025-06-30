@@ -29,19 +29,14 @@ class WorkOrderService:
 
         if not isinstance(order_data.maintenance_type, MaintenanceType):
             raise ValueError("maintenance_type inválido")
-
         if not isinstance(order_data.priority, PriorityLevel):
             raise ValueError("priority inválido")
-
         if not isinstance(order_data.status, Status):
             raise ValueError("status inválido")
-
         if not isinstance(order_data.estimated_time, int) or order_data.estimated_time <= 0:
             raise ValueError("estimated_time debe ser un entero mayor que 0")
-
         if not isinstance(order_data.estimated_time_unit, TimeUnit):
             raise ValueError("estimated_time_unit inválido")
-
         if supervisor is None:
             raise ValueError("supervisor no puede ser nulo")
 
@@ -55,13 +50,11 @@ class WorkOrderService:
             estimated_time_unit=order_data.estimated_time_unit,
             description=order_data.description.strip()
         )
-
         if technician:
             order.assigned_to = technician.id
             order.status = Status.IN_PROGRESS
         else:
             order.assigned_to = None
             order.status = Status.UNASSIGNED
-
         order = self._repository.save(order)
         return order
