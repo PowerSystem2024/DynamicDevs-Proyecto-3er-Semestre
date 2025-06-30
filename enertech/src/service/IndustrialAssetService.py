@@ -34,6 +34,54 @@ class IndustrialAssetService:
                                 location=asset_data.location, acquisition_date=acquisition_date)
         return self._repository.save(asset)
 
+    def get_asset_by_id(self, asset_id: int) -> IndustrialAsset:
+        """
+        Recupera un IndustrialAsset por su ID.
+        Args:
+            asset_id: ID del activo a recuperar.
+        Returns:
+            IndustrialAsset: El objeto recuperado.
+        Raises:
+            ValueError: Si el ID es inválido o no existe.
+        """
+        if not isinstance(asset_id, int) or asset_id <= 0:
+            raise ValueError("ID de activo debe ser un entero positivo")
+        asset = self._repository.get_by_id(asset_id)
+        if not asset:
+            raise ValueError(f"Activo industrial con ID {asset_id} no encontrado")
+        return asset
+
+    def update_asset_details(self, asset_id: int, asset_data: IndustrialAssetData) -> IndustrialAsset:
+        """
+        Actualiza los detalles de un IndustrialAsset existente.
+        Args:
+            asset_id: ID del activo a actualizar.
+            asset_data: Objeto con los nuevos datos a aplicar.
+        Returns:
+            IndustrialAsset: El objeto actualizado con todos sus datos.
+        """
+        self.get_asset_by_id(asset_id)  # Verifica que el activo exista
+        asset_to_update = IndustrialAsset(
+            asset_type=asset_data.asset_type,
+            model=asset_data.model,
+            location=asset_data.location,
+            acquisition_date=self._validate_and_parse_date(asset_data.acquisition_date),
+        )
+        asset_updated = self._repository.update(asset_to_update)
+        return asset_updated
+
+    def get_assets_by_criteria(self, criteria: dict) -> list[IndustrialAsset]:
+        """
+        Recupera activos industriales según criterios de búsqueda.
+        Args:
+            criteria: Diccionario con los criterios de búsqueda.
+        Returns:
+            list[IndustrialAsset]: Lista de activos que cumplen los criterios.
+        """
+        if not isinstance(criteria, dict):
+            raise TypeError("Los criterios deben ser un diccionario")
+        return self._repository.list_by_criteria(criteria)
+
     @staticmethod
     def _validate_and_parse_date(date_str: str) -> datetime.date:
         """Valida y convierte una cadena de fecha en formato dd/mm/yyyy a date."""
