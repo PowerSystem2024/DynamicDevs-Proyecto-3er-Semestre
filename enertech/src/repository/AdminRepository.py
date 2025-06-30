@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List
 from enertech.src.database.DatabaseManager import DatabaseManager
 from enertech.src.domain.Admin import Admin
 from enertech.src.domain.UserRole import UserRole
@@ -116,7 +116,6 @@ class AdminRepository(BaseUserRepository):
         """
         Se obtiene una lista de administradores que cumplan con ciertos criterios de búsqueda.
         :param criteria: Diccionario con los criterios de búsqueda (ejemplo: {'active': True}).
-        :param sort: Campo por el cual ordenar los resultados (por defecto: 'id').
         :return: Lista de Admin que cumplen con los criterios, o None si no hay resultados.
         """
         _TABLE_NAME = "admins"

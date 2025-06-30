@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from src.database.DatabaseManager import DatabaseManager
+from enertech.src.database.DatabaseManager import DatabaseManager
 
 
 class Criteria:
