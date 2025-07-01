@@ -1,7 +1,7 @@
-from src.domain.MaintenanceType import MaintenanceType
-from src.domain.PriorityLevel import PriorityLevel
-from src.domain.Status import Status
-from src.domain.TimeUnit import TimeUnit
+from enertech.src.domain.MaintenanceType import MaintenanceType
+from enertech.src.domain.PriorityLevel import PriorityLevel
+from enertech.src.domain.Status import Status
+from enertech.src.domain.TimeUnit import TimeUnit
 
 
 class WorkOrderData:

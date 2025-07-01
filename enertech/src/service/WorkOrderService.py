@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from enertech.src.repository.WorkOrderRepository import WorkOrderRepository
 from enertech.src.domain.WorkOrder import WorkOrder
@@ -16,8 +17,7 @@ class WorkOrderService:
     def __init__(self, repository: WorkOrderRepository):
         self._repository = repository
 
-    def create_work_order(self, order_data: WorkOrderData, supervisor: Supervisor, technician: Optional[Technician],
-                          industrial_asset: IndustrialAsset) -> WorkOrder:
+    def create_work_order(self, order_data: WorkOrderData, supervisor: Supervisor, industrial_asset: IndustrialAsset) -> WorkOrder:
         for field_name in ['title', 'description']:
             value = getattr(order_data, field_name, None)
             if not isinstance(value, str):
@@ -29,19 +29,14 @@ class WorkOrderService:
 
         if not isinstance(order_data.maintenance_type, MaintenanceType):
             raise ValueError("maintenance_type inválido")
-
         if not isinstance(order_data.priority, PriorityLevel):
             raise ValueError("priority inválido")
-
         if not isinstance(order_data.status, Status):
             raise ValueError("status inválido")
-
         if not isinstance(order_data.estimated_time, int) or order_data.estimated_time <= 0:
             raise ValueError("estimated_time debe ser un entero mayor que 0")
-
         if not isinstance(order_data.estimated_time_unit, TimeUnit):
             raise ValueError("estimated_time_unit inválido")
-
         if supervisor is None:
             raise ValueError("supervisor no puede ser nulo")
 
@@ -56,12 +51,42 @@ class WorkOrderService:
             description=order_data.description.strip()
         )
 
-        if technician:
-            order.assigned_to = technician.id
-            order.status = Status.IN_PROGRESS
-        else:
-            order.assigned_to = None
-            order.status = Status.UNASSIGNED
-
+        order.assigned_to = None
+        order.status = Status.UNASSIGNED
         order = self._repository.save(order)
         return order
+
+    def get_work_order_by_id(self, work_order_id: int) -> WorkOrder:
+        if not isinstance(work_order_id, int) or work_order_id <= 0:
+            raise ValueError("work_order_id debe ser un número entero positivo")
+        work_order = self._repository.get_by_id(work_order_id)
+        if not work_order:
+            raise ValueError(f"Orden de trabajo con ID {work_order_id} no encontrada")
+        return work_order
+
+    def assign_technician(self, work_order: WorkOrder, technician: Technician) -> WorkOrder:
+        if not isinstance(work_order, WorkOrder) or work_order is None:
+            raise TypeError("work_order debe ser una instancia de WorkOrder")
+        if not isinstance(technician, Technician) or technician is None:
+            raise TypeError("technician debe ser una instancia de Technician")
+        orders_assigned_to_this_technician = self._repository.list_by_criteria(
+            {'assigned_to': technician.id, 'status': Status.IN_PROGRESS})
+        if len(orders_assigned_to_this_technician) >= technician.max_active_orders:
+            raise ValueError("El técnico ya tiene el máximo de órdenes de trabajo activas")
+        work_order.assigned_to = technician.id
+        work_order.status = Status.IN_PROGRESS
+        return self._repository.update(work_order)
+
+    def resolve_order(self, order: WorkOrder, closure_coments: str) -> WorkOrder:
+        order.closure_comments = closure_coments
+        order.status = Status.RESOLVED
+        order.resolved_at = datetime.now()
+        return self._repository.update(order)
+
+    def list_work_orders(self, criteria: Optional[dict] = None) -> list[WorkOrder]:
+        if criteria is None:
+            criteria = {}
+        if not isinstance(criteria, dict):
+            raise TypeError("criteria debe ser un diccionario")
+        return self._repository.list_by_criteria(criteria)
+

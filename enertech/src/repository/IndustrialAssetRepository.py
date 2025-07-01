@@ -45,17 +45,14 @@ class IndustrialAssetRepository:
         updates = []
         params_set = []
         column_names = ['asset_type', 'model', 'location', 'acquisition_date']
-
         # Obtener campos a actualizar y sus nuevos valores
         for field in column_names:
             if hasattr(asset, field) and getattr(asset, field) is not None:
                 updates.append(f"{field} = %s")
                 params_set.append(getattr(asset, field))
-
         if not updates:
             # Si no hay campos para actualizar, retornar None
             return None
-
         query = f"""
                     UPDATE INDUSTRIAL_ASSETS
                     SET {', '.join(updates)}
@@ -64,16 +61,13 @@ class IndustrialAssetRepository:
                                        if hasattr(asset, field) and getattr(asset, field) is not None])})
                     RETURNING id, asset_type, model, location, acquisition_date;
                 """
-
         # Parámetros para la consulta: nuevos valores + id + valores originales para comparación
         params = params_set.copy()  # nuevos valores para SET
         params.append(asset.id)  # id para WHERE
-
         # Añadir valores originales para comparación en WHERE
         for field in column_names:
             if hasattr(asset, field) and getattr(asset, field) is not None:
                 params.append(getattr(asset, field))
-
         with self._db_manager.get_connection().cursor() as cursor:
             cursor.execute(query, params)
             self._db_manager.commit_transaction()

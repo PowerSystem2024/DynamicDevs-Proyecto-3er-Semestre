@@ -5,7 +5,7 @@ from enertech.src.domain.MaintenanceType import MaintenanceType
 from enertech.src.domain.PriorityLevel import PriorityLevel
 from enertech.src.domain.TimeUnit import TimeUnit
 from enertech.src.domain.Status import Status
-from src.repository.Criteria import Criteria
+from enertech.src.repository.Criteria import Criteria
 
 
 # Repositorio para manejar operaciones de base de datos para órdenes de trabajo (WorkOrder)
@@ -50,15 +50,13 @@ class WorkOrderRepository:
                     estimated_time      = %s,
                     estimated_time_unit = %s,
                     description         = %s,
-                    assigned_technician = %s,
+                    assigned_to         = %s,
                     opened_at           = %s,
                     resolved_at         = %s,
                     closure_comments    = %s,
                     status              = %s
-                WHERE id = %s RETURNING id, title, created_by, asset_id, maintenance_type, priority,
-                      estimated_time, estimated_time_unit, description,
-                      assigned_technician, opened_at, resolved_at,
-                      closure_comments, status; \
+                WHERE id = %s RETURNING id, title, assigned_to, created_by, asset_id, maintenance_type, priority, status, opened_at, 
+                resolved_at, estimated_time, estimated_time_unit, resolved_on_time, description, closure_comments; \
                 """
         with self._db_manager.get_connection().cursor() as cursor:
             # Ejecuta la actualización con los valores del objeto order
