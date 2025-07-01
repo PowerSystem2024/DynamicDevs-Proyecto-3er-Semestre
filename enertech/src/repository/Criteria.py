@@ -1,9 +1,11 @@
 from typing import Any, List
 
+from enertech.src.AppLogger import AppLogger
 from enertech.src.database.DatabaseManager import DatabaseManager
 
 
 class Criteria:
+    _logger = AppLogger.setup_logger(__name__)
     def __init__(self):
         pass
 
@@ -26,13 +28,18 @@ class Criteria:
         if criteria:
             for field, value in criteria.items():
                 if value is not None:
-                    where_clauses.append(f"{field} ILIKE %s")  # ILIKE para case-insensitive
-                    params.append(f"%{value}%")  # Wildcards para búsqueda parcial
+                    if isinstance(value, int):
+                        where_clauses.append(f"{field} = %s")
+                        params.append(value)
+                    else:
+                        where_clauses.append(f"{field} ILIKE %s")  # ILIKE para case-insensitive
+                        params.append(f"%{value}%")  # Wildcards para búsqueda parcial
 
         if where_clauses:
             base_query += " WHERE " + " AND ".join(where_clauses)
 
         with db_connection.get_connection().cursor() as cursor:
+            Criteria._logger.debug(f"Executing query: {base_query} with params: {params}")
             cursor.execute(base_query, params)
             results = cursor.fetchall()
             db_connection.close_connection()

@@ -17,8 +17,7 @@ class WorkOrderService:
     def __init__(self, repository: WorkOrderRepository):
         self._repository = repository
 
-    def create_work_order(self, order_data: WorkOrderData, supervisor: Supervisor, technician: Optional[Technician],
-                          industrial_asset: IndustrialAsset) -> WorkOrder:
+    def create_work_order(self, order_data: WorkOrderData, supervisor: Supervisor, industrial_asset: IndustrialAsset) -> WorkOrder:
         for field_name in ['title', 'description']:
             value = getattr(order_data, field_name, None)
             if not isinstance(value, str):
@@ -51,12 +50,9 @@ class WorkOrderService:
             estimated_time_unit=order_data.estimated_time_unit,
             description=order_data.description.strip()
         )
-        if technician:
-            order.assigned_to = technician.id
-            order.status = Status.IN_PROGRESS
-        else:
-            order.assigned_to = None
-            order.status = Status.UNASSIGNED
+
+        order.assigned_to = None
+        order.status = Status.UNASSIGNED
         order = self._repository.save(order)
         return order
 
@@ -87,5 +83,10 @@ class WorkOrderService:
         order.resolved_at = datetime.now()
         return self._repository.update(order)
 
-
+    def list_work_orders(self, criteria: Optional[dict] = None) -> list[WorkOrder]:
+        if criteria is None:
+            criteria = {}
+        if not isinstance(criteria, dict):
+            raise TypeError("criteria debe ser un diccionario")
+        return self._repository.list_by_criteria(criteria)
 

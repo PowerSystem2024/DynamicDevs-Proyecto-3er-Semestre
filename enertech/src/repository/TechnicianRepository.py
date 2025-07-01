@@ -112,6 +112,20 @@ class TechnicianRepository(BaseUserRepository):
             self._db_manager.close_connection()
         return count > 0
 
+    def exists_by_credentials(self, email: str, password: str) -> bool:
+        """
+        Verifica si existe un técnico con las credenciales proporcionadas.
+        :param email: Correo electrónico del técnico.
+        :param password: Contraseña del técnico.
+        :return: True si existe el técnico con esas credenciales, False en caso contrario.
+        """
+        query = "SELECT COUNT(*) FROM technicians WHERE email = %s AND password = %s"
+        with self._db_manager.get_connection().cursor() as cursor:
+            cursor.execute(query, (email, password))
+            count = cursor.fetchone()[0]
+            self._db_manager.close_connection()
+        return count > 0
+
     def list_by_criteria(self, criteria: dict) -> List[Technician]:
         """
         Lista técnicos que cumplan con ciertos criterios de búsqueda.

@@ -140,6 +140,20 @@ class SupervisorRepository(BaseUserRepository):
             return self._map_to_supervisor(result)
         return None
 
+    def exists_by_credentials(self, email: str, password: str) -> bool:
+        """
+        Verifica si existe un supervisor con las credenciales proporcionadas.
+        :param email: Correo electrónico del supervisor.
+        :param password: Contraseña del supervisor.
+        :return: True si existe el supervisor con esas credenciales, False en caso contrario.
+        """
+        query = "SELECT COUNT(*) FROM supervisors WHERE email = %s AND password = %s"
+        with self._db_manager.get_connection().cursor() as cursor:
+            cursor.execute(query, (email, password))
+            count = cursor.fetchone()[0]
+            self._db_manager.close_connection()
+        return count > 0
+
     def list_by_criteria(self, criteria: dict) -> List[Supervisor]:
         """
         Lista supervisores que cumplan con ciertos criterios de búsqueda.

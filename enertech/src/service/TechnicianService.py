@@ -1,3 +1,4 @@
+from enertech.src.domain.Status import Status
 from enertech.src.domain.Technician import Technician
 from enertech.src.domain.UserBaseData import UserBaseData
 from enertech.src.repository.TechnicianRepository import TechnicianRepository
@@ -6,7 +7,7 @@ from enertech.src.domain.WorkOrder import WorkOrder
 
 
 class TechnicianService:
-    def _init_(self, repository: TechnicianRepository, work_order_service: WorkOrderService):
+    def __init__(self, repository: TechnicianRepository, work_order_service: WorkOrderService):
         self._repository = repository
         self._work_order_service = work_order_service
 
@@ -34,6 +35,25 @@ class TechnicianService:
         if order.assigned_to != technician.id:
             raise PermissionError("La orden de trabajo no pertenece al técnico indicado")
         return self._work_order_service.resolve_order(order, closure_comments)
+
+    def exist_technician_by_credentials(self, email: str, password: str) -> bool:
+        if not isinstance(email, str) or not isinstance(password, str):
+            raise TypeError("El email y la contraseña deben ser cadenas de texto")
+        if not self._repository.exists_by_credentials(email, password):
+            raise PermissionError("Credenciales incorrectas, vuelva a intentarlo.")
+
+    def get_technician_by_email(self, email: str) -> Technician:
+        if not isinstance(email, str) or email.strip() == "" or "@" not in email:
+            raise TypeError("Email inválido")
+        supervisor = self._repository.get_by_email(email)
+        if not supervisor:
+            raise ValueError(f"Técnico con email {email} no encontrado")
+        return supervisor
+
+    def get_assigned_work_orders(self, technician: Technician) -> list[WorkOrder]:
+        if not isinstance(technician, Technician):
+            raise PermissionError("Debe ser un técnico para obtener sus órdenes de trabajo asignadas")
+        return self._work_order_service.list_work_orders({'assigned_to': technician.id, 'status': Status.IN_PROGRESS.value})
 
     @staticmethod
     def _validate_type(base_data: UserBaseData, max_active_orders: int):

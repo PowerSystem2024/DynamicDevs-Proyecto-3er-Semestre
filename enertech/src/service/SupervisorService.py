@@ -53,13 +53,11 @@ class SupervisorService:
         # Guardamos los cambios y retornamos el supervisor actualizado
         return self._repository.update(supervisor)
 
-    def initiate_work_order(self, order_data: WorkOrderData, technician_id: int, asset_id: int,
-                            supervisor_id: int) -> WorkOrder:
-        technician = self._technician_service.get_technician_by_id(technician_id)
+    def initiate_work_order(self, order_data: WorkOrderData, asset_id: int, supervisor_id: int) -> WorkOrder:
         asset = self._industrial_asset_service.get_asset_by_id(asset_id)
         supervisor = self.get_supervisor_by_id(supervisor_id)
         # Guardamos la orden de trabajo y retornamos
-        return self._work_order_service.create_work_order(order_data, supervisor, technician, asset)
+        return self._work_order_service.create_work_order(order_data, supervisor, asset)
 
     def assign_work_order(self, tehcnician_id: int, work_order_id: int) -> WorkOrder:
         technician = self._technician_service.get_technician_by_id(tehcnician_id)
@@ -73,6 +71,20 @@ class SupervisorService:
         supervisor = self._repository.get_by_id(supervisor_id)
         if not supervisor:
             raise ValueError(f"Supervisor con {supervisor_id} no encontrado")
+        return supervisor
+
+    def exist_supervisor_by_credentials(self, email: str, password: str):
+        if not isinstance(email, str) or not isinstance(password, str):
+            raise TypeError("El email y la contraseña deben ser cadenas de texto")
+        if not self._repository.exists_by_credentials(email, password):
+            raise PermissionError("Credenciales incorrectas, vuelva a intentarlo.")
+
+    def get_supervisor_by_email(self, email: str) -> Supervisor:
+        if not isinstance(email, str) or email.strip() == "" or "@" not in email:
+            raise TypeError("Email inválido")
+        supervisor = self._repository.get_by_email(email)
+        if not supervisor:
+            raise ValueError(f"Supervisor con email {email} no encontrado")
         return supervisor
 
     @staticmethod

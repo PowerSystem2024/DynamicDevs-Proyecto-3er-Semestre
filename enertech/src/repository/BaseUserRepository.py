@@ -30,5 +30,9 @@ class BaseUserRepository(ABC):
         pass
 
     @abstractmethod
+    def exists_by_credentials(self, email: str, password: str) -> bool:
+        pass
+
+    @abstractmethod
     def list_by_criteria(self, filters: dict) -> List[User]:
         pass
